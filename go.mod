@@ -20,5 +20,6 @@ require (
 
 require (
 	github.com/go-sql-driver/mysql v1.10.0
+	github.com/google/uuid v1.6.0
 	golang.org/x/sys v0.30.0 // indirect
 )

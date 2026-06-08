@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/farshidboroomand/jobs-collector/internal/domain"
+	"github.com/google/uuid"
 	"github.com/gookit/goutil/testutil/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -24,7 +25,7 @@ func (m *MockJobRepo) GetByID(id int) (*domain.Job, error) {
 func TestPublishJob_Success(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockJobRepo)
-	job := &domain.Job{Title: "Go Developer", Company: "Google"}
+	job := &domain.Job{ID: uuid.New(), Title: "Go Developer", Company: "Google"}
 	mockRepo.On("Create", job).Return(nil)
 
 	// Act
