@@ -1,4 +1,4 @@
-package configs
+package config
 
 import (
 	"bufio"
@@ -11,50 +11,53 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Configs holds all application configuration values.
-type Configs struct {
-	DATABASEHOST     string `yaml:"database_host"`
-	DATABASEPORT     string `yaml:"database_port"`
-	DATABASEUSER     string `yaml:"database_user"`
-	DATABASEPASSWORD string `yaml:"database_password"`
-	DATABASENAME     string `yaml:"database_name"`
-	APIPORT          string `yaml:"api_port"`
+// Config holds all application configuration values.
+type Config struct {
+	DBCONNECTION string `yaml:"db_connection"`
+	DBHOST       string `yaml:"db_host"`
+	DBPORT       string `yaml:"db_port"`
+	DBDATABASE   string `yaml:"db_database"`
+	DBUSERNAME   string `yaml:"db_username"`
+	DBPASSWORD   string `yaml:"db_password"`
+	APIPORT      string `yaml:"api_port"`
 }
 
 // Load loads configuration from defaults, .env, YAML file, and environment variables.
-func Load() (*Configs, error) {
+func Load() (*Config, error) {
 	loadDotEnv(".env")
 
 	cfg := defaults()
 
 	path := os.Getenv("CONFIG_FILE")
 	if path == "" {
-		path = "./configs.yaml"
+		path = "./config.yaml"
 	}
 
 	if err := mergeYAML(path, cfg); err != nil {
 		if os.Getenv("CONFIG_FILE") != "" {
-			return &Configs{}, err
+			return &Config{}, err
 		}
 	}
 
-	cfg.DATABASEHOST = env("DATABASE_HOST", cfg.DATABASEHOST)
-	cfg.DATABASEPORT = env("DATABASE_PORT", cfg.DATABASEPORT)
-	cfg.DATABASEUSER = env("DATABASE_USER", cfg.DATABASEUSER)
-	cfg.DATABASEPASSWORD = env("DATABASE_PASSWORD", cfg.DATABASEPASSWORD)
-	cfg.DATABASENAME = env("DATABASE_NAME", cfg.DATABASENAME)
 	cfg.APIPORT = env("API_PORT", cfg.APIPORT)
-
+	cfg.DBCONNECTION = env("DB_CONNECTION", cfg.DBCONNECTION)
+	cfg.DBHOST = env("DB_HOST", cfg.DBHOST)
+	cfg.DBPORT = env("DB_PORT", cfg.DBPORT)
+	cfg.DBDATABASE = env("DB_DATABASE", cfg.DBDATABASE)
+	cfg.DBUSERNAME = env("DB_USERNAME", cfg.DBUSERNAME)
+	cfg.DBPASSWORD = env("DB_PASSWORD", cfg.DBPASSWORD)
 	return cfg, nil
 }
 
-func defaults() *Configs {
-	return &Configs{
-		DATABASEHOST:     "localhost",
-		DATABASEPORT:     "3306",
-		DATABASEUSER:     "jobs",
-		DATABASEPASSWORD: "jobs",
-		DATABASENAME:     "jobs",
+func defaults() *Config {
+	return &Config{
+		APIPORT:      "jobs",
+		DBCONNECTION: "mysql",
+		DBHOST:       "jobs-db",
+		DBPORT:       "3306",
+		DBDATABASE:   "jobs",
+		DBUSERNAME:   "jobs",
+		DBPASSWORD:   "jobs",
 	}
 }
 
@@ -90,7 +93,7 @@ func loadDotEnv(path string) {
 	}
 }
 
-func mergeYAML(path string, cfg *Configs) error {
+func mergeYAML(path string, cfg *Config) error {
 	cleanPath := filepath.Clean(path)
 
 	if strings.Contains(cleanPath, "..") {
@@ -110,4 +113,9 @@ func env(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+// DSN constructs the Data Source Name for a MySQL connection.
+func DSN(cfg Config) string {
+	return cfg.DBUSERNAME + ":" + cfg.DBPASSWORD + "@tcp(" + cfg.DBHOST + ":" + cfg.DBPORT + ")/" + cfg.DBDATABASE + "?parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci"
 }
