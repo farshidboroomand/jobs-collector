@@ -1,0 +1,46 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: jobs-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "${DB_PORT}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: ../../
+      dockerfile: deployments/docker/Dockerfile
+    container_name: jobs-app
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ../../.env
+    ports:
+      - "${API_PORT}:8080"
+  migrate:
+    image: migrate/migrate
+    profiles: ["tools"]
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ../../.env
+    volumes:
+      - ../../migrations:/migrations
+
+volumes:
+  mysql_data:
