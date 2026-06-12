@@ -11,15 +11,30 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	// EnvProduction production environment identifier.
+	EnvProduction = "production"
+	// EnvStaging staging environment identifier.
+	EnvStaging = "staging"
+	// EnvTesting testing environment identifier.
+	EnvTesting = "testing"
+)
+
 // Config holds all application configuration values.
 type Config struct {
-	DBCONNECTION string `yaml:"db_connection"`
-	DBHOST       string `yaml:"db_host"`
-	DBPORT       string `yaml:"db_port"`
-	DBDATABASE   string `yaml:"db_database"`
-	DBUSERNAME   string `yaml:"db_username"`
-	DBPASSWORD   string `yaml:"db_password"`
-	APIPORT      string `yaml:"api_port"`
+	DBCONNECTION            string `yaml:"db_connection"`
+	DBHOST                  string `yaml:"db_host"`
+	DBPORT                  string `yaml:"db_port"`
+	DBDATABASE              string `yaml:"db_database"`
+	DBUSERNAME              string `yaml:"db_username"`
+	DBPASSWORD              string `yaml:"db_password"`
+	APIPORT                 string `yaml:"api_port"`
+	NAME                    string `yaml:"name"`
+	ENV                     string `yaml:"env"`
+	LOGLEVEL                string `yaml:"logLevel"`
+	MAINTENANCEMODE         bool   `yaml:"maintenanceMode"`
+	GRACEFULSHUTDOWNTIMEOUT int    `yaml:"gracefulShutdownTimeout"`
+	READHEADERTIMEOUT       int    `yaml:"readHeaderTimeout"`
 }
 
 // Load loads configuration from defaults, .env, YAML file, and environment variables.
@@ -51,13 +66,17 @@ func Load() (*Config, error) {
 
 func defaults() *Config {
 	return &Config{
-		APIPORT:      "jobs",
-		DBCONNECTION: "mysql",
-		DBHOST:       "jobs-db",
-		DBPORT:       "3306",
-		DBDATABASE:   "jobs",
-		DBUSERNAME:   "jobs",
-		DBPASSWORD:   "jobs",
+		DBCONNECTION:            "mysql",
+		DBHOST:                  "jobs-db",
+		DBPORT:                  "3306",
+		DBDATABASE:              "jobs",
+		DBUSERNAME:              "jobs",
+		DBPASSWORD:              "jobs",
+		NAME:                    "Search Engine",
+		ENV:                     EnvStaging,
+		LOGLEVEL:                "info",
+		GRACEFULSHUTDOWNTIMEOUT: 15,
+		READHEADERTIMEOUT:       60,
 	}
 }
 
