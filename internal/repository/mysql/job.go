@@ -18,7 +18,7 @@ func NewJobRepository(db *sql.DB) repository.JobRepository {
 
 func (r *jobRepo) Create(j *domain.Job) error {
 	_, err := r.db.Exec(
-		"INSERT INTO jobs (id, title, company, country_id) VALUES (?, ?, ?)",
+		"INSERT INTO jobs (id, title, company, country_id) VALUES (?, ?, ?, ?)",
 		j.ID,
 		j.Title,
 		j.Company,

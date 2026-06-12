@@ -4,7 +4,7 @@ run:
   relative-path-mode: gomod
   tests: false
   allow-parallel-runners: true
-  go: "1.26"
+  go: "1.25"
 linters:
   default: none
   enable:
