@@ -1,0 +1,155 @@
+nameOverride: ""
+fullnameOverride: ""
+
+namespace:
+  create: false
+  name: ""
+
+replicaCount: 2
+
+image:
+  repository: jobs-collector
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 65532
+  fsGroupChangePolicy: OnRootMismatch
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+  annotations: {}
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations: {}
+  hosts:
+    - host: job.localhost
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 300m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: null
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+topologySpreadConstraints: []
+
+env:
+  DB_CONNECTION: mysql
+  DB_PORT: "3306"
+  API_PORT: "80"
+
+extraEnv: []
+extraEnvFrom: []
+
+probes:
+  enabled: false
+  liveness:
+    httpGet:
+      path: /healthz
+      port: http
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+  readiness:
+    httpGet:
+      path: /readyz
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+migrations:
+  enabled: false
+  image:
+    repository: migrate/migrate
+    tag: latest
+    pullPolicy: IfNotPresent
+  command: []
+  args: []
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 300
+  extraVolumeMounts: []
+  extraVolumes: []
+
+mysql:
+  enabled: true
+  image:
+    repository: mysql
+    tag: "8.0"
+    pullPolicy: IfNotPresent
+  service:
+    port: 3306
+    annotations: {}
+  auth:
+    database: jobs
+    username: jobs
+    password: ""
+    rootPassword: ""
+    existingSecret: ""
+  persistence:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  podAnnotations: {}
+  podLabels: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}

@@ -1,0 +1,66 @@
+{{- if .Values.migrations.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "jobs-collector.fullname" . }}-migrations
+  namespace: {{ include "jobs-collector.namespace" . }}
+  labels:
+    {{- include "jobs-collector.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrations
+spec:
+  backoffLimit: {{ .Values.migrations.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.migrations.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "jobs-collector.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: migrations
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrations
+          image: "{{ .Values.migrations.image.repository }}:{{ .Values.migrations.image.tag }}"
+          imagePullPolicy: {{ .Values.migrations.image.pullPolicy }}
+          {{- with .Values.migrations.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.migrations.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "jobs-collector.fullname" . }}-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "jobs-collector.fullname" . }}-config
+                  key: DB_PORT
+            - name: DB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "jobs-collector.fullname" . }}-config
+                  key: DB_DATABASE
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jobs-collector.secretName" . }}
+                  key: db-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jobs-collector.secretName" . }}
+                  key: db-password
+          {{- with .Values.migrations.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.migrations.extraVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

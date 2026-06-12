@@ -1,5 +1,5 @@
 # ---------- Stage 1: Build ----------
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
@@ -30,7 +30,7 @@ RUN apk add --no-cache ca-certificates
 COPY --from=builder /app/jobs-collector .
 
 # Expose API port
-EXPOSE 8080
+EXPOSE 80
 
 # Run application
 CMD ["./jobs-collector"]

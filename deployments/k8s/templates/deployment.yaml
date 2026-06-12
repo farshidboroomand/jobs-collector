@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "jobs-collector.fullname" . }}
+  namespace: {{ include "jobs-collector.namespace" . }}
+  labels:
+    {{- include "jobs-collector.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "jobs-collector.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "jobs-collector.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "jobs-collector.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "jobs-collector.name" . }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "jobs-collector.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          env:
+            - name: DB_CONNECTION
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "jobs-collector.fullname" . }}-config
+                  key: DB_CONNECTION
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "jobs-collector.fullname" . }}-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "jobs-collector.fullname" . }}-config
+                  key: DB_PORT
+            - name: DB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "jobs-collector.fullname" . }}-config
+                  key: DB_DATABASE
+            - name: API_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "jobs-collector.fullname" . }}-config
+                  key: API_PORT
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jobs-collector.secretName" . }}
+                  key: db-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jobs-collector.secretName" . }}
+                  key: db-password
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.probes.enabled }}
+          livenessProbe:
+            {{- toYaml .Values.probes.liveness | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.probes.readiness | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

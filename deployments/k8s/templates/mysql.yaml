@@ -1,0 +1,135 @@
+{{- if .Values.mysql.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "jobs-collector.mysql.fullname" . }}
+  namespace: {{ include "jobs-collector.namespace" . }}
+  labels:
+    {{- include "jobs-collector.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mysql
+  {{- with .Values.mysql.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ports:
+    - port: {{ .Values.mysql.service.port }}
+      targetPort: mysql
+      name: mysql
+  selector:
+    {{- include "jobs-collector.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mysql
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "jobs-collector.mysql.fullname" . }}
+  namespace: {{ include "jobs-collector.namespace" . }}
+  labels:
+    {{- include "jobs-collector.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mysql
+spec:
+  serviceName: {{ include "jobs-collector.mysql.fullname" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "jobs-collector.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mysql
+  template:
+    metadata:
+      labels:
+        {{- include "jobs-collector.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: mysql
+        {{- with .Values.mysql.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.mysql.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: mysql
+          image: {{ include "jobs-collector.mysqlImage" . | quote }}
+          imagePullPolicy: {{ .Values.mysql.image.pullPolicy }}
+          ports:
+            - containerPort: 3306
+              name: mysql
+          env:
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "jobs-collector.fullname" . }}-config
+                  key: DB_DATABASE
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jobs-collector.secretName" . }}
+                  key: db-username
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jobs-collector.secretName" . }}
+                  key: db-password
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jobs-collector.secretName" . }}
+                  key: db-root-password
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - mysqladmin ping -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - mysqladmin ping -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+          resources:
+            {{- toYaml .Values.mysql.resources | nindent 12 }}
+      {{- with .Values.mysql.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mysql.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mysql.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if .Values.mysql.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-data
+      spec:
+        accessModes:
+          {{- toYaml .Values.mysql.persistence.accessModes | nindent 10 }}
+        {{- with .Values.mysql.persistence.storageClass }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.mysql.persistence.size }}
+  {{- else }}
+      volumes:
+        - name: mysql-data
+          emptyDir: {}
+  {{- end }}
+{{- end }}

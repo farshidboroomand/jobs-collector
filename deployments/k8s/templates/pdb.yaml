@@ -1,0 +1,14 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "jobs-collector.fullname" . }}
+  namespace: {{ include "jobs-collector.namespace" . }}
+  labels:
+    {{- include "jobs-collector.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "jobs-collector.selectorLabels" . | nindent 6 }}
+{{- end }}
