@@ -88,6 +88,14 @@ env:
 extraEnv: []
 extraEnvFrom: []
 
+waitForMysql:
+  enabled: true
+  image:
+    repository: busybox
+    tag: "1.36"
+    pullPolicy: IfNotPresent
+  timeoutSeconds: 300
+
 probes:
   enabled: false
   liveness:
@@ -119,6 +127,8 @@ migrations:
   ttlSecondsAfterFinished: 300
   extraVolumeMounts: []
   extraVolumes: []
+  waitForMysql:
+    enabled: true
 
 mysql:
   enabled: true

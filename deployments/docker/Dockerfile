@@ -29,6 +29,8 @@ RUN apk add --no-cache ca-certificates
 # Copy binary from builder
 COPY --from=builder /app/jobs-collector .
 
+COPY migrations ./migrations
+
 # Expose API port
 EXPOSE 80
 

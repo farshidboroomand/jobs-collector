@@ -11,4 +11,5 @@ spec:
   selector:
     matchLabels:
       {{- include "jobs-collector.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
 {{- end }}

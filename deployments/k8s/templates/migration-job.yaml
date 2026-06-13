@@ -17,6 +17,36 @@ spec:
         app.kubernetes.io/component: migrations
     spec:
       restartPolicy: OnFailure
+      {{- if and .Values.mysql.enabled .Values.migrations.waitForMysql.enabled }}
+      initContainers:
+        - name: wait-for-mysql
+          image: "{{ .Values.waitForMysql.image.repository }}:{{ .Values.waitForMysql.image.tag }}"
+          imagePullPolicy: {{ .Values.waitForMysql.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              end=$(($(date +%s) + {{ .Values.waitForMysql.timeoutSeconds }}))
+              until nc -z "$DB_HOST" "$DB_PORT"; do
+                if [ "$(date +%s)" -ge "$end" ]; then
+                  echo "Timed out waiting for MySQL at $DB_HOST:$DB_PORT" >&2
+                  exit 1
+                fi
+                echo "Waiting for MySQL at $DB_HOST:$DB_PORT"
+                sleep 2
+              done
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "jobs-collector.fullname" . }}-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "jobs-collector.fullname" . }}-config
+                  key: DB_PORT
+      {{- end }}
       containers:
         - name: migrations
           image: "{{ .Values.migrations.image.repository }}:{{ .Values.migrations.image.tag }}"

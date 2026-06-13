@@ -35,6 +35,7 @@ type Config struct {
 	MAINTENANCEMODE         bool   `yaml:"maintenanceMode"`
 	GRACEFULSHUTDOWNTIMEOUT int    `yaml:"gracefulShutdownTimeout"`
 	READHEADERTIMEOUT       int    `yaml:"readHeaderTimeout"`
+	SSLMODE                 string `yamle:"sslMode"`
 }
 
 // Load loads configuration from defaults, .env, YAML file, and environment variables.
@@ -61,6 +62,7 @@ func Load() (*Config, error) {
 	cfg.DBDATABASE = env("DB_DATABASE", cfg.DBDATABASE)
 	cfg.DBUSERNAME = env("DB_USERNAME", cfg.DBUSERNAME)
 	cfg.DBPASSWORD = env("DB_PASSWORD", cfg.DBPASSWORD)
+	cfg.SSLMODE = env("SSL_MODE", cfg.SSLMODE)
 	return cfg, nil
 }
 
@@ -77,6 +79,7 @@ func defaults() *Config {
 		LOGLEVEL:                "info",
 		GRACEFULSHUTDOWNTIMEOUT: 15,
 		READHEADERTIMEOUT:       60,
+		SSLMODE:                 "disable",
 	}
 }
 
@@ -135,6 +138,6 @@ func env(key, fallback string) string {
 }
 
 // DSN constructs the Data Source Name for a MySQL connection.
-func DSN(cfg Config) string {
+func DSN(cfg *Config) string {
 	return cfg.DBUSERNAME + ":" + cfg.DBPASSWORD + "@tcp(" + cfg.DBHOST + ":" + cfg.DBPORT + ")/" + cfg.DBDATABASE + "?parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci"
 }

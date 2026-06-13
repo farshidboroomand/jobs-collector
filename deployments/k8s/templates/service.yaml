@@ -18,3 +18,4 @@ spec:
       name: http
   selector:
     {{- include "jobs-collector.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: api

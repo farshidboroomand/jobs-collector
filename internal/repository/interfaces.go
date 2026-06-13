@@ -1,9 +1,14 @@
 package repository
 
-import "github.com/farshidboroomand/jobs-collector/internal/domain"
+import (
+	"context"
 
-// JobRepository defines the storage operations for jobs.
-type JobRepository interface {
-	Create(job *domain.Job) error
-	GetByID(id int) (*domain.Job, error)
+	"github.com/farshidboroomand/jobs-collector/internal/domain"
+)
+
+// BotRepository defines the storage operations for bots.
+type BotRepository interface {
+	Create(ctx context.Context, Bot *domain.Bot) error
+	FindByID(ctx context.Context, id uint) (*domain.Bot, error)
+	FindAll(ctx context.Context, page, pageSize int) ([]domain.Bot, int64, error)
 }

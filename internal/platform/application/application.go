@@ -3,23 +3,25 @@ package application
 import (
 	"context"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/farshidboroomand/jobs-collector/config"
+	"github.com/farshidboroomand/jobs-collector/internal/service"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
-// App represents application configs in the system.
 type App struct {
-	Config *config.Config
-	Router *gin.Engine
+	Config   *config.Config
+	Router   *gin.Engine
+	Services *service.Services
 }
 
-// NewApplication creates an instance of router and routes.
-func NewApplication(_ context.Context, cfg *config.Config) (*App, error) {
-	a := &App{Config: cfg}
+func NewApplication(cfg *config.Config, services *service.Services) (*App, error) {
+	a := &App{
+		Config:   cfg,
+		Services: services,
+	}
 
 	a.registerRouter()
 	a.registerRoutes()
@@ -27,9 +29,32 @@ func NewApplication(_ context.Context, cfg *config.Config) (*App, error) {
 	return a, nil
 }
 
-// RunServices run routers.
-func (a *App) RunServices(ctx context.Context, wg *sync.WaitGroup) {
-	a.runRouter(ctx, wg)
+func (a *App) Run(ctx context.Context) error {
+	srv := &http.Server{
+		Addr:              ":" + a.Config.APIPORT,
+		Handler:           a.Router,
+		ReadHeaderTimeout: time.Second * time.Duration(a.Config.READHEADERTIMEOUT),
+	}
+
+	go func() {
+		log.Infof("http server listening on %s", a.Config.APIPORT)
+
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.WithError(err).Fatal("http server error")
+		}
+	}()
+
+	<-ctx.Done()
+
+	log.Info("shutting down http server")
+
+	shutdownCtx, cancel := context.WithTimeout(
+		context.Background(),
+		time.Second*time.Duration(a.Config.GRACEFULSHUTDOWNTIMEOUT),
+	)
+	defer cancel()
+
+	return srv.Shutdown(shutdownCtx)
 }
 
 func (a *App) registerRouter() {
@@ -43,46 +68,21 @@ func (a *App) registerRouter() {
 	}
 
 	router := gin.New()
+
 	router.Use(
-		// log.Logger(log.StandardLogger()),
 		gin.Recovery(),
 	)
+
 	a.Router = router
 }
 
-func (a *App) runRouter(ctx context.Context, wg *sync.WaitGroup) {
-	srv := &http.Server{
-		Addr:              ":" + a.Config.APIPORT,
-		Handler:           a.Router,
-		ReadHeaderTimeout: time.Second * time.Duration(a.Config.READHEADERTIMEOUT),
-	}
+func (a *App) registerRoutes() {
+	api := a.Router.Group("/api")
 
-	runAsync(
-		ctx, wg, func(ctx context.Context) {
-			go func() {
-				if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-					log.WithError(err).Fatal("error on running router")
-				}
-			}()
-
-			<-ctx.Done()
-
-			shutdownCtx, cancel := context.WithTimeout(
-				context.Background(),
-				time.Second*time.Duration(a.Config.GRACEFULSHUTDOWNTIMEOUT),
-			)
-			defer cancel()
-
-			if err := srv.Shutdown(shutdownCtx); err != nil {
-				log.WithContext(ctx).WithError(err).Error("could not gracefully shutdown the server")
-			}
-			log.Debug("router successfully closed")
-		},
-	)
+	api.GET("/bots", a.getBots)
 }
 
-func runAsync(ctx context.Context, wg *sync.WaitGroup, fn func(ctx context.Context)) {
-	wg.Go(func() {
-		fn(ctx)
-	})
+func (a *App) getBots(c *gin.Context) {
+	log.Info("get bots")
+	c.JSON(http.StatusOK, nil)
 }
