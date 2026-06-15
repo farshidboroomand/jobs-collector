@@ -31,7 +31,7 @@ func main() {
 	}
 	log.Info("database connected")
 	defer func() {
-		if err := sqlDB.Close(); err != nil {
+		if err = sqlDB.Close(); err != nil {
 			log.WithError(err).Error("failed to close sql db")
 		}
 	}()

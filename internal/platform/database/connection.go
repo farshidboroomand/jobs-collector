@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// NewDatabase establishes a new database connection using GORM and the provided configuration.
 func NewDatabase(cfg *config.Config) (*gorm.DB, error) {
 	dsn := config.DSN(cfg)
 

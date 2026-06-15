@@ -35,7 +35,7 @@ type Config struct {
 	MAINTENANCEMODE         bool   `yaml:"maintenanceMode"`
 	GRACEFULSHUTDOWNTIMEOUT int    `yaml:"gracefulShutdownTimeout"`
 	READHEADERTIMEOUT       int    `yaml:"readHeaderTimeout"`
-	SSLMODE                 string `yamle:"sslMode"`
+	SSLMODE                 string `                               yamle:"sslMode"`
 }
 
 // Load loads configuration from defaults, .env, YAML file, and environment variables.

@@ -14,6 +14,7 @@ type Bot struct {
 	IsActive    bool   `gorm:"default:true"`
 }
 
+// TableName specifies the table name for Bot model.
 func (Bot) TableName() string {
 	return "bots"
 }
