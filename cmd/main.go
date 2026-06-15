@@ -37,10 +37,12 @@ func main() {
 	}()
 	// repositories
 	botRepo := repository.NewBotRepository(db)
+	continentRepo := repository.NewContinentRepository(db)
 
 	// services container
 	services := &service.Services{
-		Bot: service.NewBotService(botRepo),
+		Bot:       service.NewBotService(botRepo),
+		Continent: service.NewContinentService(continentRepo),
 	}
 
 	// application

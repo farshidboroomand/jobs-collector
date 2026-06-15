@@ -13,18 +13,20 @@ import (
 
 // App encapsulates the application configuration, router, services, and handlers.
 type App struct {
-	Config     *config.Config
-	Router     *gin.Engine
-	Services   *service.Services
-	BotHandler *BotHandler
+	Config           *config.Config
+	Router           *gin.Engine
+	Services         *service.Services
+	BotHandler       *BotHandler
+	ContinentHandler *ContinentHandler
 }
 
 // NewApplication initializes a new App instance with the provided configuration and services.
 func NewApplication(cfg *config.Config, services *service.Services) (*App, error) {
 	a := &App{
-		Config:     cfg,
-		Services:   services,
-		BotHandler: NewBotHandler(services),
+		Config:           cfg,
+		Services:         services,
+		BotHandler:       NewBotHandler(services),
+		ContinentHandler: NewContinentHandler(services),
 	}
 
 	a.registerRouter()
@@ -35,11 +37,13 @@ func NewApplication(cfg *config.Config, services *service.Services) (*App, error
 
 // registerRoutes sets up the API routes for the application.
 func (a *App) registerRoutes() {
-	api := a.Router.Group("/api")
+	api := a.Router.Group("/api/v1")
 	{
-		// Cleaner routing: all Bot routes handled by BotHandler
 		api.GET("/bots", a.BotHandler.List)
-		api.POST("/bots", a.BotHandler.CreateBot) // Assuming CreateBot is implemented in BotHandler
+		api.POST("/bots", a.BotHandler.CreateBot)
+
+		api.GET("/continents/{id}", a.ContinentHandler.FetchContinentByID)
+		api.POST("/continents", a.ContinentHandler.CreateContinent)
 	}
 }
 
@@ -55,7 +59,7 @@ func (a *App) registerRouter() {
 	}
 
 	r := gin.New()
-	r.Use(gin.Recovery(), gin.Logger()) // Added Logger for better visibility
+	r.Use(gin.Recovery(), gin.Logger())
 	a.Router = r
 }
 
