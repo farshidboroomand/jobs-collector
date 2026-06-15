@@ -1,0 +1,7 @@
+mysql:
+  enabled: true
+  auth:
+    database: jobs
+    username: jobs
+    password: "jobs"
+    rootPassword: "root"

@@ -11,15 +11,31 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	// EnvProduction production environment identifier.
+	EnvProduction = "production"
+	// EnvStaging staging environment identifier.
+	EnvStaging = "staging"
+	// EnvTesting testing environment identifier.
+	EnvTesting = "testing"
+)
+
 // Config holds all application configuration values.
 type Config struct {
-	DBCONNECTION string `yaml:"db_connection"`
-	DBHOST       string `yaml:"db_host"`
-	DBPORT       string `yaml:"db_port"`
-	DBDATABASE   string `yaml:"db_database"`
-	DBUSERNAME   string `yaml:"db_username"`
-	DBPASSWORD   string `yaml:"db_password"`
-	APIPORT      string `yaml:"api_port"`
+	DBCONNECTION            string `yaml:"db_connection"`
+	DBHOST                  string `yaml:"db_host"`
+	DBPORT                  string `yaml:"db_port"`
+	DBDATABASE              string `yaml:"db_database"`
+	DBUSERNAME              string `yaml:"db_username"`
+	DBPASSWORD              string `yaml:"db_password"`
+	APIPORT                 string `yaml:"api_port"`
+	NAME                    string `yaml:"name"`
+	ENV                     string `yaml:"env"`
+	LOGLEVEL                string `yaml:"logLevel"`
+	MAINTENANCEMODE         bool   `yaml:"maintenanceMode"`
+	GRACEFULSHUTDOWNTIMEOUT int    `yaml:"gracefulShutdownTimeout"`
+	READHEADERTIMEOUT       int    `yaml:"readHeaderTimeout"`
+	SSLMODE                 string `                               yamle:"sslMode"`
 }
 
 // Load loads configuration from defaults, .env, YAML file, and environment variables.
@@ -46,18 +62,24 @@ func Load() (*Config, error) {
 	cfg.DBDATABASE = env("DB_DATABASE", cfg.DBDATABASE)
 	cfg.DBUSERNAME = env("DB_USERNAME", cfg.DBUSERNAME)
 	cfg.DBPASSWORD = env("DB_PASSWORD", cfg.DBPASSWORD)
+	cfg.SSLMODE = env("SSL_MODE", cfg.SSLMODE)
 	return cfg, nil
 }
 
 func defaults() *Config {
 	return &Config{
-		APIPORT:      "jobs",
-		DBCONNECTION: "mysql",
-		DBHOST:       "jobs-db",
-		DBPORT:       "3306",
-		DBDATABASE:   "jobs",
-		DBUSERNAME:   "jobs",
-		DBPASSWORD:   "jobs",
+		DBCONNECTION:            "mysql",
+		DBHOST:                  "jobs-db",
+		DBPORT:                  "3306",
+		DBDATABASE:              "jobs",
+		DBUSERNAME:              "jobs",
+		DBPASSWORD:              "jobs",
+		NAME:                    "Search Engine",
+		ENV:                     EnvStaging,
+		LOGLEVEL:                "info",
+		GRACEFULSHUTDOWNTIMEOUT: 15,
+		READHEADERTIMEOUT:       60,
+		SSLMODE:                 "disable",
 	}
 }
 
@@ -116,6 +138,6 @@ func env(key, fallback string) string {
 }
 
 // DSN constructs the Data Source Name for a MySQL connection.
-func DSN(cfg Config) string {
+func DSN(cfg *Config) string {
 	return cfg.DBUSERNAME + ":" + cfg.DBPASSWORD + "@tcp(" + cfg.DBHOST + ":" + cfg.DBPORT + ")/" + cfg.DBDATABASE + "?parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci"
 }
