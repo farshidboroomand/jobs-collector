@@ -42,7 +42,7 @@ func (a *App) registerRoutes() {
 		api.GET("/bots", a.BotHandler.List)
 		api.POST("/bots", a.BotHandler.CreateBot)
 
-		api.GET("/continents/{id}", a.ContinentHandler.FetchContinentByID)
+		api.GET("/continents/:id", a.ContinentHandler.FetchContinentByID)
 		api.POST("/continents", a.ContinentHandler.CreateContinent)
 	}
 }
